@@ -32,10 +32,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Lowercase actor for ghcr.io
+        id: ghcr
+        run: echo "user=${GITHUB_ACTOR,,}" >> $GITHUB_OUTPUT
+
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.GHCR_USERNAME }}
+          username: ${{ steps.ghcr.outputs.user }}
           password: ${{ secrets.GHCR_TOKEN }}
 
       - uses: docker/setup-qemu-action@v3
