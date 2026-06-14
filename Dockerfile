@@ -8,7 +8,7 @@ WORKDIR /src
 
 # Environment
 ENV NODE_ENV=production
-ENV MEDIASOUP_SKIP_WORKER_PREBUILT_DOWNLOAD=true
+ENV MEDIASOUP_SKIP_WORKER_PREBUILT_DOWNLOAD=false
 
 # Memory optimization: limit Node.js heap to 1GB and default to 2 mediasoup workers
 ENV NODE_OPTIONS="--max-old-space-size=1024"
