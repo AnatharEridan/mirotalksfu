@@ -328,6 +328,7 @@ describe('test-ServerAPI', () => {
 
         it('should handle room with no peers', () => {
             const sendToAllStub = sinon.stub();
+            const closeStub = sinon.stub();
             const roomList = new Map([
                 [
                     'room1',
@@ -335,6 +336,7 @@ describe('test-ServerAPI', () => {
                         getPeers: () => new Map(),
                         removePeer: sinon.stub(),
                         sendToAll: sendToAllStub,
+                        close: closeStub,
                     },
                 ],
             ]);
@@ -342,6 +344,7 @@ describe('test-ServerAPI', () => {
             const result = serverApi.endMeeting(roomList, 'room1');
 
             result.should.deepEqual({ success: true, message: 'Meeting ended', room: 'room1' });
+            closeStub.calledOnce.should.be.true();
             roomList.has('room1').should.be.false();
         });
     });

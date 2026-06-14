@@ -8,16 +8,12 @@
 ███████ ███████ ██   ██   ████   ███████ ██   ██                                           
 
 prod dependencies: {
-    @mattermost/client      : https://www.npmjs.com/package/@mattermost/client
-    @ngrok/ngrok            : https://www.npmjs.com/package/@ngrok/ngrok
-    @sentry/node            : https://www.npmjs.com/package/@sentry/node
     axios                   : https://www.npmjs.com/package/axios
     chokidar                : https://www.npmjs.com/package/chokidar
     colors                  : https://www.npmjs.com/package/colors
     compression             : https://www.npmjs.com/package/compression
     cors                    : https://www.npmjs.com/package/cors
     crypto-js               : https://www.npmjs.com/package/crypto-js
-    discord.js              : https://www.npmjs.com/package/discord.js
     dompurify               : https://www.npmjs.com/package/dompurify
     express                 : https://www.npmjs.com/package/express
     express-openid-connect  : https://www.npmjs.com/package/express-openid-connect
@@ -72,19 +68,15 @@ const express = require('express');
 const { auth, requiresAuth } = require('express-openid-connect');
 const { withFileLock } = require('./MutexManager');
 const { PassThrough } = require('stream');
-const { S3Client } = require('@aws-sdk/client-s3');
-const { Upload } = require('@aws-sdk/lib-storage');
 const { fixDurationOrRemux } = require('./FixDurationOrRemux');
 const cors = require('cors');
 const compression = require('compression');
 const socketIo = require('socket.io');
 const httpolyglot = require('httpolyglot');
 const mediasoup = require('mediasoup');
-const mediasoupClient = require('mediasoup-client');
 const http = require('http');
 const path = require('path');
 const axios = require('axios');
-const ngrok = require('@ngrok/ngrok');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const sanitizeFilename = require('sanitize-filename');
@@ -103,12 +95,13 @@ const log = new Logger('Server');
 const yaml = require('js-yaml');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = yaml.load(fs.readFileSync(path.join(__dirname, '/../api/swagger.yaml'), 'utf8'));
-const Sentry = require('@sentry/node');
-const Discord = require('./Discord');
-const Mattermost = require('./Mattermost');
 const restrictAccessByIP = require('./middleware/IpWhitelist');
 const { applyEmbedHeaders, embedAllowedOrigins, embedCsp } = require('./middleware/EmbedHeaders');
 const packageJson = require('../../package.json');
+const mediasoupClientVersion = packageJson.dependencies?.['mediasoup-client'];
+
+let S3Client = null;
+let Upload = null;
 
 // Login attempts limit
 const rateLimit = require('express-rate-limit');
@@ -227,6 +220,7 @@ const brandHtmlInjection = config?.ui?.brand?.htmlInjection ?? true;
 // Incoming Stream to RTPM
 const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto-js');
+const CryptoJS = require('crypto-js');
 const RtmpStreamer = require('./RtmpStreamer.js'); // Import the RtmpStreamer class
 const rtmpCfg = config?.media?.rtmp;
 const rtmpDir = rtmpCfg?.dir || 'rtmp';
@@ -245,12 +239,6 @@ function getRtmpTotalActiveStreamsCount() {
 const nodemailer = require('./lib/nodemailer');
 const { SCHEDULE_MEETING_LIMITS } = nodemailer;
 
-// Slack API
-const CryptoJS = require('crypto-js');
-const qS = require('qs');
-const slackEnabled = config?.integrations?.slack?.enabled || false;
-const slackSigningSecret = config?.integrations?.slack?.signingSecret || '';
-
 const app = express();
 
 const options = {
@@ -266,7 +254,9 @@ const corsOptions = {
 const server = httpolyglot.createServer(options, app);
 
 const io = socketIo(server, {
-    maxHttpBufferSize: 1e7,
+    // RTMP chunks are 1 MB. Keep a small margin without allowing arbitrary
+    // 10 MB Socket.IO allocations per connected client.
+    maxHttpBufferSize: 2 * 1024 * 1024,
     transports: ['websocket'],
     cors: corsOptions,
 });
@@ -308,65 +298,11 @@ const restApi = {
     allowed: config.api?.allowed || {},
 };
 
-// Sentry monitoring
-const sentryEnabled = config.integrations?.sentry?.enabled || false;
-const sentryDSN = config.integrations.sentry.DSN;
-const sentryTracesSampleRate = config.integrations.sentry.tracesSampleRate;
-if (sentryEnabled && typeof sentryDSN === 'string' && sentryDSN.trim()) {
-    log.info('Sentry monitoring started...');
-
-    Sentry.init({
-        dsn: sentryDSN,
-        tracesSampleRate: sentryTracesSampleRate,
-    });
-
-    // Accept logLevels as an array, e.g., ['warn', 'error']
-    const logLevels = config.integrations?.sentry?.logLevels || ['error'];
-
-    const stripAnsi = (str) => (typeof str === 'string' ? str.replace(/\u001b\[[\d;]*m/g, '') : str);
-
-    const sanitizeArgs = (args) =>
-        args
-            .map((arg) =>
-                typeof arg === 'string' ? stripAnsi(arg) : typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
-            )
-            .join(' ');
-
-    const originalConsole = {};
-    logLevels.forEach((level) => {
-        originalConsole[level] = console[level];
-        console[level] = function (...args) {
-            switch (level) {
-                case 'warn':
-                    Sentry.captureMessage(sanitizeArgs(args), 'warning');
-                    break;
-                case 'error':
-                    args[0] instanceof Error
-                        ? Sentry.captureException(args[0])
-                        : Sentry.captureException(new Error(sanitizeArgs(args)));
-                    break;
-            }
-            originalConsole[level].apply(console, args);
-        };
-    });
-
-    // log.error('Sentry error', { foo: 'bar' });
-    // log.warn('Sentry warning');
-}
-
 // Handle WebHook
 const webhook = {
     enabled: config?.integrations?.webhook?.enabled || false,
     url: config?.integrations?.webhook?.url || 'http://localhost:8888/webhook-endpoint',
 };
-
-// Discord Bot
-const { enabled, commands, token } = config?.integrations?.discord || {};
-
-if (enabled && commands.length > 0 && token) {
-    const discordBot = new Discord(token, commands);
-    log.info('Discord bot is enabled and starting');
-}
 
 // Stats
 const defaultStats = {
@@ -426,6 +362,8 @@ if (rtmpEnabled) {
 let s3Client = null;
 const s3Enabled = config?.integrations?.s3?.enabled;
 if (s3Enabled) {
+    ({ S3Client } = require('@aws-sdk/client-s3'));
+    ({ Upload } = require('@aws-sdk/lib-storage'));
     s3Client = new S3Client({
         region: config?.integrations?.s3?.region,
         credentials: {
@@ -604,9 +542,9 @@ function startServer() {
     );
     app.use(cors(corsOptions));
     app.use(compression());
-    app.use(express.json({ limit: '50mb' })); // Handles JSON payloads
-    app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Handles URL-encoded payloads
-    app.use(express.raw({ type: 'video/webm', limit: '50mb' })); // Handles raw binary data
+    app.use(express.json({ limit: '2mb' })); // Handles JSON payloads
+    app.use(express.urlencoded({ extended: true, limit: '2mb' })); // Handles URL-encoded payloads
+    app.use(express.raw({ type: 'video/webm', limit: '2mb' })); // Recording chunks are 1 MB
     app.use(restApi.basePath + '/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument)); // api docs
 
     // IP Whitelist check ...
@@ -624,9 +562,6 @@ function startServer() {
         next();
     });
     */
-
-    // Mattermost
-    const mattermost = new Mattermost(app);
 
     // Remove trailing slashes in url handle bad requests
     app.use((err, req, res, next) => {
@@ -1543,9 +1478,7 @@ function startServer() {
             rtmpStreamKey = uuidv4();
             log.info('initRTMP using custom RTMP URL', { rtmp });
         } else {
-            const domainName = config?.integrations?.ngrok?.enabled
-                ? 'localhost'
-                : req.headers.host?.split(':')[0] || 'localhost';
+            const domainName = req.headers.host?.split(':')[0] || 'localhost';
 
             const rtmpUseNodeMediaServer = rtmpCfg.useNodeMediaServer ?? true;
             const rtmpServer = rtmpCfg.server != '' ? rtmpCfg.server : false;
@@ -1856,43 +1789,6 @@ function startServer() {
     });
 
     // ####################################################
-    // SLACK API
-    // ####################################################
-
-    app.post('/slack', (req, res) => {
-        if (!slackEnabled) return res.end('`Under maintenance` - Please check back soon.');
-
-        if (restApi.allowed && !restApi.allowed.slack) {
-            return res.end(
-                '`This endpoint has been disabled`. Please contact the administrator for further information.'
-            );
-        }
-
-        log.debug('Slack', req.headers);
-
-        if (!slackSigningSecret) return res.end('`Slack Signing Secret is empty!`');
-
-        const slackSignature = req.headers['x-slack-signature'];
-        const requestBody = qS.stringify(req.body, { format: 'RFC1738' });
-        const timeStamp = req.headers['x-slack-request-timestamp'];
-        const time = Math.floor(new Date().getTime() / 1000);
-
-        if (Math.abs(time - timeStamp) > 300) return res.end('`Wrong timestamp` - Ignore this request.');
-
-        const sigBaseString = 'v0:' + timeStamp + ':' + requestBody;
-        const mySignature = 'v0=' + CryptoJS.HmacSHA256(sigBaseString, slackSigningSecret);
-
-        if (mySignature == slackSignature) {
-            const host = req.headers.host;
-            const api = new ServerApi(host);
-            const meetingURL = api.getMeetingURL();
-            log.debug('Slack', { meeting: meetingURL });
-            return res.end(meetingURL);
-        }
-        return res.end('`Wrong signature` - Verification failed!');
-    });
-
-    // ####################################################
     // AUTHORIZED API IF ALLOWED
     // ####################################################
 
@@ -1962,7 +1858,6 @@ function startServer() {
                     rtcMinPort: config.mediasoup?.worker?.rtcMinPort,
                     rtcMaxPort: config.mediasoup?.worker?.rtcMaxPort,
                 },
-                ngrok_enabled: config.ngrok?.enabled ? config.ngrok : false,
             },
 
             // Security & Authentication
@@ -2003,9 +1898,6 @@ function startServer() {
 
             // Communication Integrations
             integrations: {
-                discord: config.integrations?.discord?.enabled ? config.integrations.discord : false,
-                mattermost: config.integrations?.mattermost?.enabled ? config.integrations.mattermost : false,
-                slack: slackEnabled ? config.integrations?.slack : false,
                 chatGPT: config.integrations?.chatGPT?.enabled ? config.integrations.chatGPT : false,
                 deepSeek: config.integrations?.deepSeek?.enabled ? config.integrations.deepSeek : false,
                 email_alerts: config?.integrations?.email?.alert ? config.integrations.email : false,
@@ -2019,7 +1911,6 @@ function startServer() {
 
             // Monitoring & Analytics
             monitoring: {
-                sentry: sentryEnabled ? config.integrations?.sentry : false,
                 stats: config.features?.stats?.enabled ? config.features.stats : false,
                 system_info: config.system?.info,
             },
@@ -2043,28 +1934,11 @@ function startServer() {
                 app: packageJson?.version,
                 node: process.versions.node,
                 server_version: mediasoup?.version,
-                client_version: mediasoupClient?.version,
+                client_version: mediasoupClientVersion,
             },
         };
 
         return safeConfig;
-    }
-
-    // ####################################################
-    // NGROK
-    // ####################################################
-
-    async function ngrokStart() {
-        try {
-            await ngrok.authtoken(config?.integrations?.ngrok?.authToken);
-            const listener = await ngrok.forward({ addr: config?.server?.listen?.port });
-            const tunnelUrl = listener.url();
-            log.info('Server config', getServerConfig(tunnelUrl));
-        } catch (err) {
-            log.warn('Ngrok Start error', err);
-            await ngrok.kill();
-            process.exit(1);
-        }
     }
 
     // ####################################################
@@ -2098,9 +1972,6 @@ function startServer() {
             'font-family:monospace'
         );
 
-        if (config?.integrations?.ngrok?.enabled && config?.integrations?.ngrok?.authToken !== '') {
-            return ngrokStart();
-        }
         log.info('Server config', getServerConfig());
 
         // Warn if default secrets are still in use
@@ -2228,6 +2099,19 @@ function startServer() {
                 return callback({
                     error: `Too many room creation requests. Please try again after ${minutesLabel(createRoomLimiterMinutes)}.`,
                 });
+            }
+
+            const previousRoomId = socket.room_id;
+            if (previousRoomId && previousRoomId !== room_id && roomList.has(previousRoomId)) {
+                const previousRoom = roomList.get(previousRoomId);
+                if (previousRoom.getPeer(socket.id)) {
+                    return callback({ error: 'leave the current room before creating another one' });
+                }
+                if (previousRoom.getPeersCount() === 0) {
+                    previousRoom.close();
+                    roomList.delete(previousRoomId);
+                    delete presenters[previousRoomId];
+                }
             }
 
             socket.room_id = room_id;
@@ -2482,7 +2366,7 @@ function startServer() {
                     case 'email':
                         nodemailer.sendEmailAlert('widget', emailPayload);
                         break;
-                    // case slack, discord, webhook, ...
+                    // Additional notification modes can be added here.
                     default:
                         log.warn('Unknown alert type for widget', { type: widget.type });
                 }
@@ -4315,9 +4199,7 @@ function startServer() {
             const room = getRoom(socket);
 
             const DEFAULT_HOST = 'localhost';
-            const host = config?.ngrok?.enabled
-                ? DEFAULT_HOST
-                : socket?.handshake?.headers?.host?.split(':')[0] || DEFAULT_HOST;
+            const host = socket?.handshake?.headers?.host?.split(':')[0] || DEFAULT_HOST;
 
             const customRtmpUrl = data.customRtmpUrl || null;
 
@@ -4374,9 +4256,7 @@ function startServer() {
             const room = getRoom(socket);
 
             const DEFAULT_HOST = 'localhost';
-            const host = config?.integrations?.ngrok?.enabled
-                ? DEFAULT_HOST
-                : socket?.handshake?.headers?.host?.split(':')[0] || DEFAULT_HOST;
+            const host = socket?.handshake?.headers?.host?.split(':')[0] || DEFAULT_HOST;
 
             const customRtmpUrl = data.customRtmpUrl || null;
 
@@ -4634,6 +4514,7 @@ function startServer() {
                 //
                 stopRTMPActiveStreams(isPresenter, room);
 
+                room.close();
                 roomList.delete(socket.room_id);
 
                 delete presenters[socket.room_id];
@@ -4698,6 +4579,7 @@ function startServer() {
                 //
                 stopRTMPActiveStreams(isPresenter, room);
 
+                room.close();
                 roomList.delete(socket.room_id);
 
                 delete presenters[socket.room_id];
@@ -5409,12 +5291,6 @@ async function gracefulShutdown(signal) {
         // 7. Cleanup HTML injector
         log.debug('Cleaning up HTML injector...');
         htmlInjector.cleanup();
-
-        // 8. Close ngrok if active
-        if (config?.integrations?.ngrok?.enabled) {
-            log.debug('Closing ngrok tunnel...');
-            await ngrok.kill();
-        }
 
         log.info('Graceful shutdown completed successfully');
         process.exit(0);

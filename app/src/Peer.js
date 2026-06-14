@@ -684,4 +684,10 @@ module.exports = class Peer {
             dataConsumers: this.dataConsumers.size,
         });
     }
+
+    toRoomInfo() {
+        return {
+            peer_info: this.peer_info,
+        };
+    }
 };

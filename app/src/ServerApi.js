@@ -93,6 +93,8 @@ module.exports = class ServerApi {
             roomObj.removePeer(peerId);
         }
 
+        roomObj.close?.();
+
         // Delete room from the active list
         roomList.delete(room);
 

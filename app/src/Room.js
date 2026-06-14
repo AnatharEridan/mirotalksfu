@@ -70,6 +70,7 @@ module.exports = class Room {
         this.bannedPeers = new Map(); // uuid -> timestamp, with TTL-based expiration
         this.webRtcTransport = config.mediasoup.webRtcTransport;
         this.router = null;
+        this.closed = false;
         this.routerSettings = config.mediasoup.router;
         this.createTheRouter();
 
@@ -120,7 +121,7 @@ module.exports = class Room {
             thereIsPolls: this.thereIsPolls(),
             shareMediaData: this.shareMediaData,
             dominantSpeaker: this.activeSpeakerObserverEnabled,
-            peers: JSON.stringify([...this.peers]),
+            peers: JSON.stringify([...this.peers].map(([id, peer]) => [id, peer.toRoomInfo()])),
             peersCount: this.getPeersCount(),
             maxParticipants: this.maxParticipants,
             maxParticipantsReached: this.peers.size > this.maxParticipants,
@@ -206,6 +207,10 @@ module.exports = class Room {
                 mediaCodecs,
             })
             .then((router) => {
+                if (this.closed) {
+                    router.close();
+                    return;
+                }
                 this.router = router;
                 if (this.audioLevelObserverEnabled) {
                     log.debug('Audio Level Observer enabled, starting observation...');
@@ -239,10 +244,16 @@ module.exports = class Room {
     }
 
     async close() {
+        if (this.closed) return;
+        this.closed = true;
         this.closeAudioLevelObserver();
         this.closeActiveSpeakerObserver();
         this.rtmpStreaming.closeAll();
         this.closeRouter();
+        this.peers.clear();
+        this.bannedPeers.clear();
+        this.polls = [];
+        this.shareMediaData = {};
         log.debug('Room closed', { room_id: this.id });
     }
 
@@ -529,8 +540,8 @@ module.exports = class Room {
             iceConsentTimeout = 35,
             initialAvailableOutgoingBitrate,
             listenInfos,
-            maxSendMessageSize = 262144,
-            maxReceiveMessageSize = 262144,
+            maxSendMessageSize = 65536,
+            maxReceiveMessageSize = 65536,
         } = this.webRtcTransport;
         return {
             ...(this.webRtcServerActive ? { webRtcServer: this.webRtcServer } : { listenInfos: listenInfos }),

@@ -1,22 +1,32 @@
 'use strict';
 
-const { JSDOM } = require('jsdom');
-const DOMPurify = require('dompurify');
 const he = require('he');
 
-// Initialize DOMPurify with jsdom
-const window = new JSDOM('').window;
-const purify = DOMPurify(window);
+let window = null;
+let purify = null;
 
 const Logger = require('./Logger');
 const log = new Logger('Xss');
 
-// Configure DOMPurify
-purify.setConfig({
-    ALLOWED_TAGS: ['a', 'img', 'div', 'span', 'svg', 'g', 'p'], // Allow specific tags
-    ALLOWED_ATTR: ['href', 'src', 'title', 'id', 'class', 'target', 'width', 'height'], // Allow specific attributes
-    ALLOWED_URI_REGEXP: /^(?!\s*(?:data|javascript|vbscript|file|view-source)\s*:)/i, // Disallow dangerous URIs (case-insensitive, ignores leading whitespace)
-});
+function ensurePurify() {
+    if (purify) return purify;
+
+    const { JSDOM } = require('jsdom');
+    const DOMPurify = require('dompurify');
+
+    window = new JSDOM('').window;
+    purify = DOMPurify(window);
+
+    purify.setConfig({
+        ALLOWED_TAGS: ['a', 'img', 'div', 'span', 'svg', 'g', 'p'],
+        ALLOWED_ATTR: ['href', 'src', 'title', 'id', 'class', 'target', 'width', 'height'],
+        ALLOWED_URI_REGEXP: /^(?!\s*(?:data|javascript|vbscript|file|view-source)\s*:)/i,
+    });
+
+    purify.addHook('beforeSanitizeAttributes', cleanAttributes);
+
+    return purify;
+}
 
 // Clean problematic attributes
 function cleanAttributes(node) {
@@ -53,9 +63,6 @@ function cleanAttributes(node) {
     }
 }
 
-// Hook to clean specific attributes that can cause XSS
-purify.addHook('beforeSanitizeAttributes', cleanAttributes);
-
 // Main function to check and sanitize data
 const checkXSS = (dataObject) => {
     try {
@@ -84,7 +91,7 @@ function sanitizeData(data) {
     if (typeof data === 'string') {
         // Decode HTML entities and URL encoded content
         const decodedData = needsDecoding(data) ? he.decode(safeDecodeURIComponent(data)) : he.decode(data);
-        return purify.sanitize(decodedData);
+        return ensurePurify().sanitize(decodedData);
     }
 
     if (Array.isArray(data)) {
