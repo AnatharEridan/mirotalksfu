@@ -44,7 +44,7 @@ const IPv4 = getIPv4();
 const RTC_MIN_PORT = parseInt(process.env.SFU_MIN_PORT) || 40000;
 const RTC_MAX_PORT = parseInt(process.env.SFU_MAX_PORT) || 40100;
 const NUM_CPUS = os.cpus().length;
-const NUM_WORKERS = Math.min(process.env.SFU_NUM_WORKERS || NUM_CPUS, NUM_CPUS);
+const NUM_WORKERS = Math.min(process.env.SFU_NUM_WORKERS || (IS_DOCKER ? 1 : NUM_CPUS), NUM_CPUS);
 
 // ==============================================
 // 3. FFmpeg Path Configuration

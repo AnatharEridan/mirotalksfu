@@ -4,8 +4,11 @@ services:
         container_name: mirotalksfu
         hostname: mirotalksfu
         restart: unless-stopped
+        environment:
+            NODE_OPTIONS: --max-old-space-size=1024
+            SFU_NUM_WORKERS: 1
         # Memory limits — tune based on your expected load
-        # 1 GB is sufficient for ~50 concurrent peers with 2 mediasoup workers
+        # 1 GB is a better starting point for small/medium rooms with 1 mediasoup worker
         mem_limit: 1g
         mem_reservation: 768m
         # The following ports are only required if 'network_mode: host' is NOT enabled.
