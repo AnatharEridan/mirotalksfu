@@ -1,9 +1,13 @@
 services:
     mirotalksfu:
-        image: mirotalk/sfu:latest
+        image: ghcr.io/anathareridan/mirotalksfu:latest
         container_name: mirotalksfu
         hostname: mirotalksfu
         restart: unless-stopped
+        # Memory limits — tune based on your expected load
+        # 1 GB is sufficient for ~50 concurrent peers with 2 mediasoup workers
+        mem_limit: 1g
+        mem_reservation: 768m
         # The following ports are only required if 'network_mode: host' is NOT enabled.
         # If you enable 'network_mode: host', you can comment out or remove the 'ports' section below.
         # network_mode: 'host'

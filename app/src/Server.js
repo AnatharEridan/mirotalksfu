@@ -420,18 +420,22 @@ if (rtmpEnabled) {
 }
 
 // ####################################################
-// AWS S3 SETUP
+// AWS S3 SETUP (lazy — only create client when S3 is enabled)
 // ####################################################
 
-const s3Client = new S3Client({
-    region: config?.integrations?.s3?.region, // Set your AWS region
-    credentials: {
-        accessKeyId: config?.integrations?.s3?.accessKeyId,
-        secretAccessKey: config?.integrations?.s3?.secretAccessKey,
-    },
-    endpoint: config?.integrations?.s3?.endpoint || undefined,
-    forcePathStyle: config?.integrations?.s3?.forcePathStyle === true,
-});
+let s3Client = null;
+const s3Enabled = config?.integrations?.s3?.enabled;
+if (s3Enabled) {
+    s3Client = new S3Client({
+        region: config?.integrations?.s3?.region,
+        credentials: {
+            accessKeyId: config?.integrations?.s3?.accessKeyId,
+            secretAccessKey: config?.integrations?.s3?.secretAccessKey,
+        },
+        endpoint: config?.integrations?.s3?.endpoint || undefined,
+        forcePathStyle: config?.integrations?.s3?.forcePathStyle === true,
+    });
+}
 
 // html views
 const views = {
@@ -1383,9 +1387,7 @@ function startServer() {
 
             req.pipe(passThrough);
 
-            const localStream = passThrough.pipe(new PassThrough());
-
-            await saveLocally(filePath, localStream, recMaxFileSize);
+            await saveLocally(filePath, passThrough, recMaxFileSize);
 
             const duration = ((Date.now() - start) / 1000).toFixed(2);
             const sizeMB = (totalBytes / 1024 / 1024).toFixed(2);

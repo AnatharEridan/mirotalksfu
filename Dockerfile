@@ -10,6 +10,10 @@ WORKDIR /src
 ENV NODE_ENV=production
 ENV MEDIASOUP_SKIP_WORKER_PREBUILT_DOWNLOAD=true
 
+# Memory optimization: limit Node.js heap to 1GB and default to 2 mediasoup workers
+ENV NODE_OPTIONS="--max-old-space-size=1024"
+ENV SFU_NUM_WORKERS=2
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
