@@ -2006,7 +2006,8 @@ function startServer() {
 
         const { logLevel, logTags, rtcMinPort, rtcMaxPort, disableLiburing } = config.mediasoup.worker;
 
-        log.info('WORKERS:', numWorkers, {
+        log.info('WORKERS:', {
+            count: numWorkers,
             source: Number.isInteger(requestedNumWorkers) && requestedNumWorkers > 0 ? 'SFU_NUM_WORKERS' : 'config',
             configured: configuredNumWorkers,
         });
