@@ -8,6 +8,8 @@ const { fixWebmDurationBuffer } = require('./FixWebmDurationBuffer');
 const Logger = require('./Logger');
 const log = new Logger('DurationOrRemux');
 
+const MAX_IN_MEMORY_FIX_SIZE = 64 * 1024 * 1024;
+
 function hasFfmpeg() {
     const r = spawnSync('ffmpeg', ['-version'], { stdio: 'ignore' });
     return r.status === 0;
@@ -49,6 +51,15 @@ function fixDurationOrRemux(inputPath, durationMs) {
     }
 
     if (isWebm && Number.isFinite(durationMs)) {
+        const fileSize = fs.statSync(inputPath).size;
+        if (fileSize > MAX_IN_MEMORY_FIX_SIZE) {
+            log.warn('Skipping in-memory WebM duration fix', {
+                fileSize,
+                maxInMemoryFixSize: MAX_IN_MEMORY_FIX_SIZE,
+            });
+            return false;
+        }
+
         const inBuf = fs.readFileSync(inputPath);
         const outBuf = fixWebmDurationBuffer(inBuf, Number(durationMs));
         if (outBuf && outBuf.length) {

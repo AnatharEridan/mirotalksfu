@@ -429,6 +429,72 @@ let announcedAddress = webRtcServerActive
 const workers = [];
 let nextMediasoupWorkerIdx = 0;
 
+const memoryMonitorIntervalMs = Math.max(Number.parseInt(process.env.MEMORY_MONITOR_INTERVAL_MS, 10) || 0, 0);
+
+function readCgroupMemory(fileName) {
+    for (const basePath of ['/sys/fs/cgroup', '/sys/fs/cgroup/memory']) {
+        try {
+            const value = fs.readFileSync(path.join(basePath, fileName), 'utf8').trim();
+            if (value && value !== 'max') return Number.parseInt(value, 10);
+        } catch {
+            // Not running in this cgroup layout.
+        }
+    }
+    return null;
+}
+
+function getCgroupMemoryBreakdown() {
+    for (const filePath of ['/sys/fs/cgroup/memory.stat', '/sys/fs/cgroup/memory/memory.stat']) {
+        try {
+            const stats = Object.fromEntries(
+                fs.readFileSync(filePath, 'utf8')
+                    .trim()
+                    .split('\n')
+                    .map((line) => line.split(/\s+/))
+            );
+            return {
+                anonymous: Number(stats.anon || stats.total_rss || 0),
+                fileCache: Number(stats.file || stats.total_cache || 0),
+                kernel: Number(stats.kernel || stats.total_kernel_memory || 0),
+            };
+        } catch {
+            // Not running in this cgroup layout.
+        }
+    }
+    return { anonymous: 0, fileCache: 0, kernel: 0 };
+}
+
+function getMemorySnapshot() {
+    const memory = process.memoryUsage();
+    const cgroup = getCgroupMemoryBreakdown();
+    let peers = 0;
+    for (const room of roomList.values()) peers += room.getPeersCount();
+
+    return {
+        processMb: Object.fromEntries(
+            Object.entries(memory).map(([key, value]) => [key, Number((value / 1024 / 1024).toFixed(1))])
+        ),
+        containerMb: {
+            current: Number(((readCgroupMemory('memory.current') || readCgroupMemory('memory.usage_in_bytes') || 0) / 1024 / 1024).toFixed(1)),
+            peak: Number(((readCgroupMemory('memory.peak') || readCgroupMemory('memory.max_usage_in_bytes') || 0) / 1024 / 1024).toFixed(1)),
+            anonymous: Number((cgroup.anonymous / 1024 / 1024).toFixed(1)),
+            fileCache: Number((cgroup.fileCache / 1024 / 1024).toFixed(1)),
+            kernel: Number((cgroup.kernel / 1024 / 1024).toFixed(1)),
+        },
+        resources: {
+            rooms: roomList.size,
+            peers,
+            workers: workers.length,
+            rtmpStreams: getRtmpTotalActiveStreamsCount(),
+        },
+    };
+}
+
+if (memoryMonitorIntervalMs > 0) {
+    const memoryMonitor = setInterval(() => log.info('Memory usage', getMemorySnapshot()), memoryMonitorIntervalMs);
+    memoryMonitor.unref();
+}
+
 // Autodetect announcedAddress with multiple fallback services
 if (!announcedAddress && IP === '0.0.0.0') {
     const detectPublicIp = async () => {

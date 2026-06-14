@@ -13,6 +13,7 @@ ENV MEDIASOUP_SKIP_WORKER_PREBUILT_DOWNLOAD=false
 # Memory optimization: cap Node.js heap and default to 1 mediasoup worker
 ENV NODE_OPTIONS="--max-old-space-size=512"
 ENV SFU_NUM_WORKERS=1
+ENV MEMORY_MONITOR_INTERVAL_MS=60000
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
