@@ -5,12 +5,12 @@ services:
         hostname: mirotalksfu
         restart: unless-stopped
         environment:
-            NODE_OPTIONS: --max-old-space-size=1024
+            NODE_OPTIONS: --max-old-space-size=512
             SFU_NUM_WORKERS: 1
         # Memory limits — tune based on your expected load
         # 1 GB is a better starting point for small/medium rooms with 1 mediasoup worker
         mem_limit: 1g
-        mem_reservation: 768m
+        mem_reservation: 512m
         # The following ports are only required if 'network_mode: host' is NOT enabled.
         # If you enable 'network_mode: host', you can comment out or remove the 'ports' section below.
         # network_mode: 'host'

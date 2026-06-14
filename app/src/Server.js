@@ -1997,11 +1997,19 @@ function startServer() {
     })();
 
     async function createWorkers() {
-        const { numWorkers } = config.mediasoup;
+        const configuredNumWorkers = Number.parseInt(config.mediasoup.numWorkers, 10);
+        const requestedNumWorkers = Number.parseInt(process.env.SFU_NUM_WORKERS, 10);
+        const numWorkers =
+            Number.isInteger(requestedNumWorkers) && requestedNumWorkers > 0
+                ? requestedNumWorkers
+                : Math.max(1, configuredNumWorkers || 1);
 
         const { logLevel, logTags, rtcMinPort, rtcMaxPort, disableLiburing } = config.mediasoup.worker;
 
-        log.info('WORKERS:', numWorkers);
+        log.info('WORKERS:', numWorkers, {
+            source: Number.isInteger(requestedNumWorkers) && requestedNumWorkers > 0 ? 'SFU_NUM_WORKERS' : 'config',
+            configured: configuredNumWorkers,
+        });
 
         for (let i = 0; i < numWorkers; i++) {
             //
