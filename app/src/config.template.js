@@ -111,6 +111,24 @@ module.exports = {
         services: {
             ip: ['http://api.ipify.org', 'http://ipinfo.io/ip', 'http://ifconfig.me/ip'],
         },
+
+        /**
+         * Rocket.Chat Integration Configuration
+         * -------------------------------------
+         * Enables automatic call reconciliation with Rocket.Chat.
+         * When the last peer leaves a room, the SFU sends a POST to
+         * Rocket.Chat's video-conference.join endpoint to end the call.
+         *
+         * - rc_server_url: Base URL of Rocket.Chat server (e.g., 'https://chat.example.com')
+         * - rc_auth_token: Personal Access Token from a RC bot user (for private channels)
+         * - rc_user_id: RC User ID for the bot user
+         *
+         * For public channels, rc_server_url is sufficient (anonymous join).
+         * For private channels, create a bot user, add it to rooms, and set rc_auth_token + rc_user_id.
+         */
+        rc_server_url: process.env.RC_SERVER_URL || '',
+        rc_auth_token: process.env.RC_AUTH_TOKEN || '',
+        rc_user_id: process.env.RC_USER_ID || '',
     },
 
     // ==============================================
@@ -1181,7 +1199,7 @@ module.exports = {
         buttons: {
             // Popup Configuration
             popup: {
-                shareRoomPopup: process.env.SHOW_SHARE_ROOM_POPUP !== 'false',
+				shareRoomPopup: process.env.SHOW_SHARE_ROOM_POPUP === 'true',
                 shareRoomQrOnHover: process.env.SHOW_SHARE_ROOM_QR_ON_HOVER !== 'false',
             },
             // Main control buttons visible in the UI
@@ -1222,7 +1240,7 @@ module.exports = {
                 micOptionsButton: process.env.SHOW_MIC_OPTIONS !== 'false',
                 tabRTMPStreamingBtn: process.env.SHOW_RTMP_TAB !== 'false',
                 tabNotificationsBtn: process.env.SHOW_NOTIFICATIONS_TAB !== 'false',
-                tabModerator: process.env.SHOW_MODERATOR_TAB !== 'false',
+				tabModerator: process.env.SHOW_MODERATOR_TAB !== 'false',
                 tabRecording: process.env.SHOW_RECORDING_TAB !== 'false',
                 host_only_recording: process.env.HOST_ONLY_RECORDING !== 'false',
                 pushToTalk: process.env.ENABLE_PUSH_TO_TALK !== 'false',
@@ -1254,12 +1272,12 @@ module.exports = {
                 sendMessageButton: process.env.SHOW_SEND_MESSAGE !== 'false',
                 sendFileButton: process.env.SHOW_SEND_FILE !== 'false',
                 sendVideoButton: process.env.SHOW_SEND_VIDEO !== 'false',
-                muteVideoButton: process.env.SHOW_MUTE_VIDEO !== 'false',
-                muteAudioButton: process.env.SHOW_MUTE_AUDIO !== 'false',
+								muteVideoButton: process.env.SHOW_MUTE_VIDEO !== 'false',
+				muteAudioButton: process.env.SHOW_MUTE_AUDIO !== 'false',
                 audioVolumeInput: process.env.SHOW_VOLUME_CONTROL !== 'false',
                 geolocationButton: process.env.SHOW_GEO_LOCATION !== 'false',
-                banButton: process.env.SHOW_BAN_BUTTON !== 'false',
-                ejectButton: process.env.SHOW_EJECT_BUTTON !== 'false',
+				banButton: process.env.SHOW_BAN_BUTTON !== 'false',
+				ejectButton: process.env.SHOW_EJECT_BUTTON !== 'false',
                 drawingButton: process.env.SHOW_DRAWING_BUTTON !== 'false',
             },
 
@@ -1268,11 +1286,11 @@ module.exports = {
                 sendMessageButton: process.env.SHOW_SEND_MESSAGE !== 'false',
                 sendFileButton: process.env.SHOW_SEND_FILE !== 'false',
                 sendVideoButton: process.env.SHOW_SEND_VIDEO !== 'false',
-                muteAudioButton: process.env.SHOW_MUTE_AUDIO !== 'false',
+				muteAudioButton: process.env.SHOW_MUTE_AUDIO !== 'false',
                 audioVolumeInput: process.env.SHOW_VOLUME_CONTROL !== 'false',
                 geolocationButton: process.env.SHOW_GEO_LOCATION !== 'false',
-                banButton: process.env.SHOW_BAN_BUTTON !== 'false',
-                ejectButton: process.env.SHOW_EJECT_BUTTON !== 'false',
+				banButton: process.env.SHOW_BAN_BUTTON !== 'false',
+				ejectButton: process.env.SHOW_EJECT_BUTTON !== 'false',
             },
 
             // Chat interface controls
