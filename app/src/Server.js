@@ -4588,15 +4588,12 @@ function startServer() {
             if (room.getPeersCount() === 0) {
                 // Notify Rocket.Chat to reconcile the call (end if empty)
                 if (config.system.rc_server_url) {
-                    const rcUrl = String(config.system.rc_server_url).replace(/\/+$/, '') + '/api/v1/video-conference.join';
-                    const headers = { 'Content-Type': 'application/json' };
-                    if (config.system.rc_auth_token && config.system.rc_user_id) {
-                        headers['X-Auth-Token'] = config.system.rc_auth_token;
-                        headers['X-User-Id'] = config.system.rc_user_id;
-                    }
+                    const appId = config.system.rc_app_id || '5724c418-eaad-40d4-9944-c2b7100c66a2';
+                    const baseUrl = String(config.system.rc_server_url).replace(/\/+$/, '');
+                    const rcUrl = `${baseUrl}/api/apps/public/${appId}/reconcile`;
                     log.debug('[Disconnect] - Rocket.Chat reconcile start', { rcUrl, callId: socket.room_id });
                     axios
-                        .post(rcUrl, { callId: socket.room_id }, { headers, timeout: 30000 })
+                        .post(rcUrl, { callId: socket.room_id }, { timeout: 30000 })
                         .then((response) => log.debug('[Disconnect] - Rocket.Chat call reconciled', { status: response.status }))
                         .catch((error) => log.error('[Disconnect] - Rocket.Chat reconcile failed:', { error: error.message, code: error.code }));
                 }

@@ -129,6 +129,7 @@ module.exports = {
         rc_server_url: process.env.RC_SERVER_URL || process.env.RC_WEBHOOK_URL || '',
         rc_auth_token: process.env.RC_AUTH_TOKEN || '',
         rc_user_id: process.env.RC_USER_ID || '',
+        rc_app_id: process.env.RC_APP_ID || '5724c418-eaad-40d4-9944-c2b7100c66a2',
     },
 
     // ==============================================
