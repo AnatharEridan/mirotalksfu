@@ -2972,6 +2972,17 @@ function startServer() {
                     const { peer_name, peer_uuid } = data;
                     const isPresenter = isPeerPresenter(socket.room_id, socket.id, peer_name, peer_uuid);
                     if (!isPresenter) return;
+                    // Presenter ended the call for everyone → reconcile immediately
+                    if (config.system.rc_server_url) {
+                        const appId = config.system.rc_app_id || '5724c418-eaad-40d4-9944-c2b7100c66a2';
+                        const baseUrl = String(config.system.rc_server_url).replace(/\/+$/, '');
+                        const rcUrl = `${baseUrl}/api/apps/public/${appId}/reconcile`;
+                        log.debug('[Cmd] - Rocket.Chat reconcile on ejectAll', { rcUrl, callId: socket.room_id });
+                        axios
+                            .post(rcUrl, { callId: socket.room_id }, { timeout: 30000 })
+                            .then((response) => log.debug('[Cmd] - Rocket.Chat call reconciled', { status: response.status }))
+                            .catch((error) => log.error('[Cmd] - Rocket.Chat reconcile failed:', { error: error.message, code: error.code }));
+                    }
                     break;
                 case 'peerAudio':
                     // Keep producer volume to update consumer on join room...
