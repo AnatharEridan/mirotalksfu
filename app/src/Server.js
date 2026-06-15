@@ -4675,7 +4675,19 @@ function startServer() {
             }
 
             if (room.getPeersCount() === 0) {
-                //
+                // Notify Rocket.Chat to reconcile the call (end if empty)
+                const exitRcServerUrl = config.system?.rc_server_url || process.env.RC_SERVER_URL || process.env.RC_WEBHOOK_URL || '';
+                if (exitRcServerUrl) {
+                    const appId = config.system?.rc_app_id || process.env.RC_APP_ID || '5724c418-eaad-40d4-9944-c2b7100c66a2';
+                    const baseUrl = String(exitRcServerUrl).replace(/\/+$/, '');
+                    const rcUrl = `${baseUrl}/api/apps/public/${appId}/reconcile`;
+                    log.debug('[ExitRoom] - Rocket.Chat reconcile start', { rcUrl, callId: socket.room_id });
+                    axios
+                        .post(rcUrl, { callId: socket.room_id }, { timeout: 30000 })
+                        .then((response) => log.debug('[ExitRoom] - Rocket.Chat call reconciled', { status: response.status }))
+                        .catch((error) => log.error('[ExitRoom] - Rocket.Chat reconcile failed:', { error: error.message, code: error.code }));
+                }
+
                 stopRTMPActiveStreams(isPresenter, room);
 
                 room.close();
@@ -5253,6 +5265,24 @@ function startServer() {
             }
         }
     }
+
+    // Periodic cleanup for orphaned rooms (e.g., desktop app kills webview without clean disconnect)
+    setInterval(() => {
+        const rcServerUrl = config.system?.rc_server_url || process.env.RC_SERVER_URL || process.env.RC_WEBHOOK_URL || '';
+        if (!rcServerUrl) return;
+        const appId = config.system?.rc_app_id || process.env.RC_APP_ID || '5724c418-eaad-40d4-9944-c2b7100c66a2';
+        const baseUrl = String(rcServerUrl).replace(/\/+$/, '');
+        for (const [roomId, room] of roomList) {
+            if (room.getPeersCount() === 0) {
+                const rcUrl = `${baseUrl}/api/apps/public/${appId}/reconcile`;
+                log.debug('[Cleanup] - Rocket.Chat reconcile orphaned room', { rcUrl, callId: roomId });
+                axios
+                    .post(rcUrl, { callId: roomId }, { timeout: 30000 })
+                    .then((response) => log.debug('[Cleanup] - Rocket.Chat reconciled orphaned room', { status: response.status, callId: roomId }))
+                    .catch((error) => log.error('[Cleanup] - Rocket.Chat reconcile failed for orphaned room:', { error: error.message, code: error.code, callId: roomId }));
+            }
+        }
+    }, 30000);
 }
 
 // ####################################################
