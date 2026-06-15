@@ -4594,10 +4594,11 @@ function startServer() {
                         headers['X-Auth-Token'] = config.system.rc_auth_token;
                         headers['X-User-Id'] = config.system.rc_user_id;
                     }
+                    log.debug('[Disconnect] - Rocket.Chat reconcile start', { rcUrl, callId: socket.room_id });
                     axios
-                        .post(rcUrl, { callId: socket.room_id }, { headers, timeout: 10000 })
-                        .then(() => log.debug('[Disconnect] - Rocket.Chat call reconciled'))
-                        .catch((error) => log.error('[Disconnect] - Rocket.Chat reconcile failed:', error.message));
+                        .post(rcUrl, { callId: socket.room_id }, { headers, timeout: 30000 })
+                        .then((response) => log.debug('[Disconnect] - Rocket.Chat call reconciled', { status: response.status }))
+                        .catch((error) => log.error('[Disconnect] - Rocket.Chat reconcile failed:', { error: error.message, code: error.code }));
                 }
 
                 stopRTMPActiveStreams(isPresenter, room);

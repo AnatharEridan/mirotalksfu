@@ -126,7 +126,7 @@ module.exports = {
          * For public channels, rc_server_url is sufficient (anonymous join).
          * For private channels, create a bot user, add it to rooms, and set rc_auth_token + rc_user_id.
          */
-        rc_server_url: process.env.RC_SERVER_URL || '',
+        rc_server_url: process.env.RC_SERVER_URL || process.env.RC_WEBHOOK_URL || '',
         rc_auth_token: process.env.RC_AUTH_TOKEN || '',
         rc_user_id: process.env.RC_USER_ID || '',
     },
