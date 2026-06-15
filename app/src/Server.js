@@ -2973,9 +2973,10 @@ function startServer() {
                     const isPresenter = isPeerPresenter(socket.room_id, socket.id, peer_name, peer_uuid);
                     if (!isPresenter) return;
                     // Presenter ended the call for everyone → reconcile immediately
-                    if (config.system.rc_server_url) {
-                        const appId = config.system.rc_app_id || '5724c418-eaad-40d4-9944-c2b7100c66a2';
-                        const baseUrl = String(config.system.rc_server_url).replace(/\/+$/, '');
+                    const ejectRcServerUrl = config.system?.rc_server_url || process.env.RC_SERVER_URL || process.env.RC_WEBHOOK_URL || '';
+                    if (ejectRcServerUrl) {
+                        const appId = config.system?.rc_app_id || process.env.RC_APP_ID || '5724c418-eaad-40d4-9944-c2b7100c66a2';
+                        const baseUrl = String(ejectRcServerUrl).replace(/\/+$/, '');
                         const rcUrl = `${baseUrl}/api/apps/public/${appId}/reconcile`;
                         log.debug('[Cmd] - Rocket.Chat reconcile on ejectAll', { rcUrl, callId: socket.room_id });
                         axios
@@ -4598,9 +4599,10 @@ function startServer() {
 
             if (room.getPeersCount() === 0) {
                 // Notify Rocket.Chat to reconcile the call (end if empty)
-                if (config.system.rc_server_url) {
-                    const appId = config.system.rc_app_id || '5724c418-eaad-40d4-9944-c2b7100c66a2';
-                    const baseUrl = String(config.system.rc_server_url).replace(/\/+$/, '');
+                const dcRcServerUrl = config.system?.rc_server_url || process.env.RC_SERVER_URL || process.env.RC_WEBHOOK_URL || '';
+                if (dcRcServerUrl) {
+                    const appId = config.system?.rc_app_id || process.env.RC_APP_ID || '5724c418-eaad-40d4-9944-c2b7100c66a2';
+                    const baseUrl = String(dcRcServerUrl).replace(/\/+$/, '');
                     const rcUrl = `${baseUrl}/api/apps/public/${appId}/reconcile`;
                     log.debug('[Disconnect] - Rocket.Chat reconcile start', { rcUrl, callId: socket.room_id });
                     axios
