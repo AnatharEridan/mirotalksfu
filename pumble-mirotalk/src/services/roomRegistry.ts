@@ -14,19 +14,31 @@ export type RoomPostRecord = {
 type RoomRegistryData = Record<string, RoomPostRecord>;
 
 export class JsonFileRoomRegistry {
-    public constructor(private path: string) {}
-
     private data: RoomRegistryData = {};
+    private readonly ready: Promise<void>;
 
-    public async initialize(): Promise<void> {
+    public constructor(private readonly filePath: string) {
+        this.ready = this.loadFromDisk();
+    }
+
+    private async loadFromDisk(): Promise<void> {
         try {
-            this.data = JSON.parse((await fs.promises.readFile(this.path, 'utf8')).toString());
+            this.data = JSON.parse((await fs.promises.readFile(this.filePath, 'utf8')).toString());
         } catch {
             this.data = {};
         }
     }
 
+    public async initialize(): Promise<void> {
+        await this.ready;
+    }
+
+    private async ensureReady(): Promise<void> {
+        await this.ready;
+    }
+
     public async saveRoom(record: Omit<RoomPostRecord, 'ended' | 'createdAt'>): Promise<void> {
+        await this.ensureReady();
         this.data[record.roomId] = {
             ...record,
             ended: false,
@@ -35,15 +47,18 @@ export class JsonFileRoomRegistry {
         await this.persist();
     }
 
-    public getRoom(roomId: string): RoomPostRecord | undefined {
+    public async getRoom(roomId: string): Promise<RoomPostRecord | undefined> {
+        await this.ensureReady();
         return this.data[roomId];
     }
 
-    public isRoomEnded(roomId: string): boolean {
+    public async isRoomEnded(roomId: string): Promise<boolean> {
+        await this.ensureReady();
         return this.data[roomId]?.ended === true;
     }
 
     public async markEnded(roomId: string): Promise<RoomPostRecord | undefined> {
+        await this.ensureReady();
         const record = this.data[roomId];
         if (!record || record.ended) {
             return record;
@@ -54,7 +69,7 @@ export class JsonFileRoomRegistry {
     }
 
     private async persist(): Promise<void> {
-        await fs.promises.mkdir(path.dirname(this.path), { recursive: true });
-        await fs.promises.writeFile(this.path, JSON.stringify(this.data, null, 2));
+        await fs.promises.mkdir(path.dirname(this.filePath), { recursive: true });
+        await fs.promises.writeFile(this.filePath, JSON.stringify(this.data, null, 2));
     }
 }

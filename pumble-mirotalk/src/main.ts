@@ -45,16 +45,22 @@ const addon: App = {
         {
             command: '/mirotalk',
             description: 'Начать видеозвонок MiroTalk',
+            usageHint: '',
             handler: async (ctx) => {
                 const roomName = ctx.payload.text?.trim() || undefined;
+                console.log('[mirotalk] slash command', {
+                    userId: ctx.payload.userId,
+                    channelId: ctx.payload.channelId,
+                    workspaceId: ctx.payload.workspaceId,
+                });
                 await createRoomInChannel(ctx, roomRegistry, roomName);
             },
         },
     ],
     globalShortcuts: [
         {
-            name: 'Начать звонок MiroTalk',
-            description: 'Создать видеозвонок MiroTalk в этом канале',
+            name: 'MiroTalk',
+            description: 'Начать видеозвонок в этом канале',
             handler: async (ctx) => {
                 await createRoomInChannel(ctx, roomRegistry);
             },
@@ -80,7 +86,7 @@ const addon: App = {
                             return;
                         }
 
-                        if (roomRegistry.isRoomEnded(buttonPayload.roomId)) {
+                        if (await roomRegistry.isRoomEnded(buttonPayload.roomId)) {
                             await ctx.ack();
                             await ctx.say('Этот звонок уже завершён. Начните новый с помощью /mirotalk.', 'ephemeral');
                             return;

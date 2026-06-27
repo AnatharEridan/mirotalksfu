@@ -50,6 +50,7 @@ services:
         volumes:
             - ./pumble-mirotalk/data:/app/data
             - ./pumble-mirotalk/app.config.json:/app/app.config.json:ro
+            - ./pumble-mirotalk/.pumbleapprc:/app/.pumbleapprc:ro
         healthcheck:
             test:
                 [
