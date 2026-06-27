@@ -30,7 +30,8 @@
         "nms:start": "docker-compose -f rtmpServers/node-media-server/docker-compose.yml up -d",
         "nms:stop": "docker-compose -f rtmpServers/node-media-server/docker-compose.yml down",
         "nms:restart": "docker-compose -f rtmpServers/node-media-server/docker-compose.yml down && docker-compose -f rtmpServers/node-media-server/docker-compose.yml up -d",
-        "nms:logs": "docker logs -f mirotalk-nms"
+        "nms:logs": "docker logs -f mirotalk-nms",
+        "update": "bash scripts/update.sh"
     },
     "repository": {
         "type": "git",
