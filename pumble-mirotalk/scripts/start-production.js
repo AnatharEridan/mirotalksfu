@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const http = require('http');
 
 const APP_SECRET_KEYS = [
     'PUMBLE_APP_ID',
@@ -7,6 +9,13 @@ const APP_SECRET_KEYS = [
     'PUMBLE_APP_CLIENT_SECRET',
     'PUMBLE_APP_SIGNING_SECRET',
 ];
+
+function secretFingerprint(value) {
+    if (!value) {
+        return '(empty)';
+    }
+    return crypto.createHash('sha256').update(value).digest('hex').slice(0, 12);
+}
 
 function loadPumbleAppRc() {
     const candidates = [
@@ -24,7 +33,7 @@ function loadPumbleAppRc() {
                 }
             }
             console.log(`Loaded Pumble app secrets from ${filePath}`);
-            return;
+            return filePath;
         } catch {
             // try next path
         }
@@ -32,9 +41,25 @@ function loadPumbleAppRc() {
 
     console.warn('Warning: .pumbleapprc not found — using PUMBLE_APP_* from environment only');
     console.warn('After pre-publish, run: npm run sync-secrets and update root .env');
+    return null;
 }
 
-loadPumbleAppRc();
+function patchHttpLogging() {
+    const originalListen = http.Server.prototype.listen;
+    http.Server.prototype.listen = function patchedListen(...args) {
+        this.on('request', (req, res) => {
+            if (!req.url || !req.url.startsWith('/hook')) {
+                return;
+            }
+            res.on('finish', () => {
+                console.log(`[http] ${req.method} ${req.url} -> ${res.statusCode}`);
+            });
+        });
+        return originalListen.apply(this, args);
+    };
+}
+
+const rcSource = loadPumbleAppRc();
 
 const missing = APP_SECRET_KEYS.filter((key) => !process.env[key]);
 if (missing.length > 0) {
@@ -43,6 +68,25 @@ if (missing.length > 0) {
     console.error('Or copy values from pumble-mirotalk/.pumbleapprc into the root .env');
     process.exit(1);
 }
+
+console.log(`Pumble app id: ${process.env.PUMBLE_APP_ID}`);
+console.log(`Signing secret fingerprint: ${secretFingerprint(process.env.PUMBLE_APP_SIGNING_SECRET)}`);
+if (rcSource) {
+    const rc = JSON.parse(fs.readFileSync(rcSource, 'utf8'));
+    const rcFp = secretFingerprint(rc.PUMBLE_APP_SIGNING_SECRET);
+    const envFp = secretFingerprint(process.env.PUMBLE_APP_SIGNING_SECRET);
+    if (rcFp !== envFp) {
+        console.warn(`WARNING: signing secret fingerprint differs from ${rcSource} (${rcFp} vs ${envFp})`);
+    }
+}
+
+try {
+    require('./patch-pumble-sdk.js');
+} catch (e) {
+    console.warn('Could not patch pumble-sdk hook logging:', e.message);
+}
+
+patchHttpLogging();
 
 process.env.PUMBLE_ADDON_PORT = process.env.PUMBLE_ADDON_PORT || '5500';
 process.env.PUMBLE_ADDON_MANIFEST_PATH = process.env.PUMBLE_ADDON_MANIFEST_PATH || 'manifest.json';

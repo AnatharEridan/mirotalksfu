@@ -18,6 +18,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder /app/dist ./dist
 COPY manifest.json app.config.json app.config.example.json ./
 COPY scripts ./scripts
+RUN node scripts/patch-pumble-sdk.js
 
 RUN mkdir -p /app/data
 

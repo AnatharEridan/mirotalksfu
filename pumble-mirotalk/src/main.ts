@@ -133,6 +133,30 @@ const addon: App = {
             res.json({ ok: true, service: 'pumble-mirotalk' });
         });
 
+        expressApp.get('/diag', (_req: unknown, res: { json: (body: unknown) => void }) => {
+            const crypto = require('crypto') as typeof import('crypto');
+            const fs = require('fs') as typeof import('fs');
+            const tokensPath = process.env.PUMBLE_TOKENS_PATH || 'tokens.json';
+            let tokenWorkspaces: string[] = [];
+            try {
+                const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8')) as Record<string, unknown>;
+                tokenWorkspaces = Object.keys(tokens);
+            } catch {
+                tokenWorkspaces = [];
+            }
+            const signingSecret = process.env.PUMBLE_APP_SIGNING_SECRET || '';
+            res.json({
+                ok: true,
+                appId: process.env.PUMBLE_APP_ID,
+                signingSecretFingerprint: signingSecret
+                    ? crypto.createHash('sha256').update(signingSecret).digest('hex').slice(0, 12)
+                    : null,
+                tokenWorkspaces,
+                hookPath: '/hook',
+                publicUrl: process.env.PUMBLE_ADDON_PUBLIC_URL || null,
+            });
+        });
+
         expressApp.get('/pumble-join/launch', createJoinLaunchHandler());
         expressApp.get('/pumble-join/pending', createJoinPendingHandler());
 

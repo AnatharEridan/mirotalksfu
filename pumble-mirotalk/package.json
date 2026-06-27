@@ -12,7 +12,8 @@
         "pre-publish": "npx pumble-cli pre-publish",
         "reinstall-oauth": "node scripts/reinstall-oauth.js",
         "sync-secrets": "node scripts/sync-pumble-secrets.js",
-        "check-secrets": "node scripts/check-pumble-secrets.js"
+        "check-secrets": "node scripts/check-pumble-secrets.js",
+        "check-remote": "node scripts/check-pumble-remote.js"
     },
     "keywords": [
         "pumble",
