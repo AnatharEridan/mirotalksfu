@@ -48,10 +48,9 @@ const addon: App = {
             usageHint: '',
             handler: async (ctx) => {
                 const roomName = ctx.payload.text?.trim() || undefined;
-                console.log('[mirotalk] slash command', {
+                console.log('[mirotalk] /mirotalk command received', {
                     userId: ctx.payload.userId,
                     channelId: ctx.payload.channelId,
-                    workspaceId: ctx.payload.workspaceId,
                 });
                 await createRoomInChannel(ctx, roomRegistry, roomName);
             },

@@ -11,7 +11,8 @@
         "dev:direct": "npm run build && node scripts/start-local.js",
         "pre-publish": "npx pumble-cli pre-publish",
         "reinstall-oauth": "node scripts/reinstall-oauth.js",
-        "sync-secrets": "node scripts/sync-pumble-secrets.js"
+        "sync-secrets": "node scripts/sync-pumble-secrets.js",
+        "check-secrets": "node scripts/check-pumble-secrets.js"
     },
     "keywords": [
         "pumble",

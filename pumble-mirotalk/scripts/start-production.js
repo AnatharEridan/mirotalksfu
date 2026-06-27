@@ -29,6 +29,9 @@ function loadPumbleAppRc() {
             // try next path
         }
     }
+
+    console.warn('Warning: .pumbleapprc not found — using PUMBLE_APP_* from environment only');
+    console.warn('After pre-publish, run: npm run sync-secrets and update root .env');
 }
 
 loadPumbleAppRc();
