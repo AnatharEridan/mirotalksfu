@@ -33,3 +33,6 @@ pumble-mirotalk/.env
 
 # pumble SDK (local reference only, not part of this repo)
 pumble-node-sdk-master/
+
+# local archives
+pumble-mirotalk.zip
