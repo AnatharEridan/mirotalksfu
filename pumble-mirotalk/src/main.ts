@@ -41,6 +41,10 @@ function parseJoinPayload(raw: string | undefined): JoinButtonPayload | undefine
 const addon: App = {
     welcomeMessage: WELCOME_MESSAGE,
     offlineMessage: OFFLINE_MESSAGE,
+    events: [
+        { name: 'APP_UNINSTALLED', handler: async () => {} },
+        { name: 'APP_UNAUTHORIZED', handler: async () => {} },
+    ],
     slashCommands: [
         {
             command: '/mirotalk',
