@@ -63,8 +63,9 @@ if (rcSource) {
     }
 }
 
+const { patchPumbleSdk } = require('./patch-pumble-sdk.js');
 try {
-    require('./patch-pumble-sdk.js');
+    patchPumbleSdk();
 } catch (e) {
     console.warn('Could not patch pumble-sdk hook logging:', e.message);
 }
