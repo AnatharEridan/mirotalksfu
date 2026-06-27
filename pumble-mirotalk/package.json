@@ -9,7 +9,8 @@
         "start:prod": "npm run build && node scripts/start-production.js",
         "dev": "pumble-cli",
         "dev:direct": "npm run build && node scripts/start-local.js",
-        "pre-publish": "npx pumble-cli pre-publish"
+        "pre-publish": "npx pumble-cli pre-publish",
+        "reinstall-oauth": "node scripts/reinstall-oauth.js"
     },
     "keywords": [
         "pumble",
