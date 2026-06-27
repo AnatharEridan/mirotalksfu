@@ -15,7 +15,7 @@ const settings = (appConfig as AppConfig).mirotalk;
 export const JOIN_ACTION = 'mirotalk_join';
 
 export const NOT_CONFIGURED_MESSAGE =
-    'MiroTalk server URL is not configured. Set `mirotalk.serverUrl` in `app.config.json` (see `app.config.example.json`).';
+    'Видеозвонки MiroTalk не настроены. Обратитесь к администратору рабочего пространства.';
 
 /**
  * Public MiroTalk SFU URL.
@@ -45,11 +45,11 @@ export const JOIN_VIDEO =
         : settings.joinVideo;
 
 export const WELCOME_MESSAGE =
-    'Hi there 👋\nMiroTalk has been installed in your workspace.\n\n' +
-    'Use `/mirotalk` in any channel to start a video call, or pick **Start MiroTalk call** from the shortcuts menu.\n\n' +
-    'When you click **Join call**, your Pumble name and avatar are passed to the meeting automatically.';
+    'Привет! 👋\nMiroTalk установлен в вашем рабочем пространстве.\n\n' +
+    'Используйте `/mirotalk` в любом канале, чтобы начать видеозвонок, или выберите **Начать звонок MiroTalk** в меню быстрых действий.\n\n' +
+    'При нажатии **Присоединиться** ваше имя и аватар из Pumble передаются в звонок автоматически.';
 
-export const OFFLINE_MESSAGE = 'MiroTalk addon is currently unreachable. Please try again later.';
+export const OFFLINE_MESSAGE = 'Приложение MiroTalk сейчас недоступно. Попробуйте позже.';
 
 /** Public base URL of this addon (for join redirect links). */
 export function getAddonPublicUrl(): string {

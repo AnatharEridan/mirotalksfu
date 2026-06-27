@@ -20,7 +20,7 @@ export async function createRoomInChannel(
 
     const client = await ctx.getBotClient();
     if (!client) {
-        await ctx.say('MiroTalk bot is not available in this workspace.');
+        await ctx.say('Бот MiroTalk недоступен в этом рабочем пространстве.');
         return;
     }
 
@@ -41,6 +41,6 @@ export async function createRoomInChannel(
         });
     } catch (error) {
         console.error('Failed to create MiroTalk room', error);
-        await ctx.say('Failed to start the video call. Check that the bot has the user:read scope and try again.', 'ephemeral');
+        await ctx.say('Не удалось начать видеозвонок. Попробуйте позже или обратитесь к администратору.', 'ephemeral');
     }
 }

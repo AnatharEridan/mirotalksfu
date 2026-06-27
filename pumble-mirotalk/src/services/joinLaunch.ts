@@ -2,16 +2,16 @@ import type { Request, Response } from 'express';
 import { takePendingJoin } from './pendingJoinStore';
 
 const LAUNCH_HTML = `<!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>Joining MiroTalk…</title>
+  <title>Подключение к MiroTalk…</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; color: #1a1a1a; }
   </style>
 </head>
 <body>
-  <p>Opening MiroTalk…</p>
+  <p>Открываем звонок…</p>
   <p id="status"></p>
   <script>
     const room = new URLSearchParams(location.search).get('room');
@@ -28,7 +28,7 @@ const LAUNCH_HTML = `<!DOCTYPE html>
       } catch (_) {}
       if (attempts >= 30) {
         clearInterval(timer);
-        status.textContent = 'Could not open the call. Click Join call in Pumble again.';
+        status.textContent = 'Не удалось открыть звонок. Нажмите «Присоединиться» в Pumble ещё раз.';
       }
     }, 200);
   </script>

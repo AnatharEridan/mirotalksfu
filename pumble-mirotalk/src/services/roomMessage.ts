@@ -13,7 +13,7 @@ function buildJoinButton(roomId: string, createdByUserId: string, ended: boolean
     if (ended) {
         return {
             type: 'button',
-            text: { type: 'plain_text', text: 'Call ended' },
+            text: { type: 'plain_text', text: 'Звонок завершён' },
             style: 'secondary',
             disabled: true,
         } as V1.BlockButton;
@@ -25,7 +25,7 @@ function buildJoinButton(roomId: string, createdByUserId: string, ended: boolean
         type: 'button',
         onAction: JOIN_ACTION,
         value: payload,
-        text: { type: 'plain_text', text: 'Join call' },
+        text: { type: 'plain_text', text: 'Присоединиться' },
         style: 'primary',
         loadingTimeout: 5,
     };
@@ -53,11 +53,8 @@ export function buildRoomAnnouncement(
                     elements: [
                         {
                             type: 'text',
-                            text: ended
-                                ? 'This MiroTalk call has ended.\nRoom: '
-                                : 'A MiroTalk video call is ready.\nRoom: ',
+                            text: ended ? 'Видеозвонок MiroTalk завершён.' : 'Видеозвонок MiroTalk готов.',
                         },
-                        { type: 'text', text: roomId, style: { code: true } },
                     ],
                 },
             ],
@@ -73,7 +70,7 @@ export function buildRoomAnnouncement(
                     elements: [
                         {
                             type: 'text',
-                            text: 'Everyone has left the call. Start a new one with ',
+                            text: 'Все участники вышли. Чтобы начать новый звонок, введите ',
                         },
                         { type: 'text', text: '/mirotalk', style: { code: true } },
                         { type: 'text', text: '.' },
@@ -86,7 +83,7 @@ export function buildRoomAnnouncement(
             elements: [
                 {
                     type: 'button',
-                    text: { type: 'plain_text', text: 'Call ended' },
+                    text: { type: 'plain_text', text: 'Звонок завершён' },
                     style: 'secondary',
                     disabled: true,
                 } as V1.BlockButton,
@@ -99,11 +96,11 @@ export function buildRoomAnnouncement(
                 {
                     type: 'rich_text_section',
                     elements: [
-                        { type: 'text', text: 'Click ' },
-                        { type: 'text', text: 'Join call', style: { bold: true } },
+                        { type: 'text', text: 'Нажмите ' },
+                        { type: 'text', text: 'Присоединиться', style: { bold: true } },
                         {
                             type: 'text',
-                            text: ' to open MiroTalk with your Pumble name and avatar.',
+                            text: ', чтобы войти в звонок с вашим именем и аватаром из Pumble.',
                         },
                     ],
                 },
@@ -116,7 +113,7 @@ export function buildRoomAnnouncement(
     }
 
     return {
-        text: ended ? `MiroTalk call ended — room ${roomId}` : `MiroTalk video call — room ${roomId}`,
+        text: ended ? 'Видеозвонок MiroTalk завершён' : 'Видеозвонок MiroTalk',
         blocks,
     };
 }

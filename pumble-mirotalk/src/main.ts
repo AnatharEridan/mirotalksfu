@@ -44,8 +44,7 @@ const addon: App = {
     slashCommands: [
         {
             command: '/mirotalk',
-            description: 'Start a MiroTalk video call',
-            usageHint: '[room-name]',
+            description: 'Начать видеозвонок MiroTalk',
             handler: async (ctx) => {
                 const roomName = ctx.payload.text?.trim() || undefined;
                 await createRoomInChannel(ctx, roomRegistry, roomName);
@@ -54,8 +53,8 @@ const addon: App = {
     ],
     globalShortcuts: [
         {
-            name: 'Start MiroTalk call',
-            description: 'Create a MiroTalk video call in this channel',
+            name: 'Начать звонок MiroTalk',
+            description: 'Создать видеозвонок MiroTalk в этом канале',
             handler: async (ctx) => {
                 await createRoomInChannel(ctx, roomRegistry);
             },
@@ -77,13 +76,13 @@ const addon: App = {
 
                         if (!buttonPayload) {
                             await ctx.ack();
-                            await ctx.say('Could not read the room details. Please start a new call with /mirotalk.', 'ephemeral');
+                            await ctx.say('Не удалось открыть звонок. Начните новый с помощью /mirotalk.', 'ephemeral');
                             return;
                         }
 
                         if (roomRegistry.isRoomEnded(buttonPayload.roomId)) {
                             await ctx.ack();
-                            await ctx.say('This call has ended. Start a new one with /mirotalk.', 'ephemeral');
+                            await ctx.say('Этот звонок уже завершён. Начните новый с помощью /mirotalk.', 'ephemeral');
                             return;
                         }
 
@@ -96,7 +95,7 @@ const addon: App = {
                         const client = await ctx.getBotClient();
                         if (!client) {
                             await ctx.ack();
-                            await ctx.say('MiroTalk bot is not available.', 'ephemeral');
+                            await ctx.say('Бот MiroTalk недоступен.', 'ephemeral');
                             return;
                         }
 
@@ -108,7 +107,7 @@ const addon: App = {
                         } catch (error) {
                             console.error('Failed to build join link', error);
                             await ctx.ack();
-                            await ctx.say('Failed to prepare your join link. Please try again.', 'ephemeral');
+                            await ctx.say('Не удалось подготовить вход в звонок. Попробуйте ещё раз.', 'ephemeral');
                         }
                     },
                 },

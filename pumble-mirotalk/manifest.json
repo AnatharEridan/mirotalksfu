@@ -1,7 +1,7 @@
 {
     "name": "mirotalk",
     "displayName": "MiroTalk",
-    "botTitle": "Start MiroTalk video calls from Pumble",
+    "botTitle": "Видеозвонки MiroTalk из Pumble",
     "bot": true,
     "socketMode": false,
     "scopes": {
