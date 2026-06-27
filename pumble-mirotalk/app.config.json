@@ -1,0 +1,7 @@
+{
+    "mirotalk": {
+        "serverUrl": "",
+        "joinAudio": true,
+        "joinVideo": true
+    }
+}

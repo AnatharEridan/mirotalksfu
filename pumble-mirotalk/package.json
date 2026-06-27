@@ -1,0 +1,23 @@
+{
+    "name": "pumble-mirotalk",
+    "version": "1.0.0",
+    "description": "Pumble addon for starting MiroTalk SFU video calls from chat",
+    "main": "dist/main.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node scripts/start-production.js",
+        "start:prod": "npm run build && node scripts/start-production.js",
+        "dev": "pumble-cli",
+        "dev:direct": "npm run build && node scripts/start-local.js",
+        "pre-publish": "npx pumble-cli pre-publish"
+    },
+    "keywords": ["pumble", "mirotalk", "webrtc", "video"],
+    "license": "AGPL-3.0",
+    "devDependencies": {
+        "pumble-cli": "^1.0.2",
+        "typescript": "^5.3.3"
+    },
+    "dependencies": {
+        "pumble-sdk": "^1.0.2"
+    }
+}

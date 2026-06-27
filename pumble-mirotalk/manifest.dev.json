@@ -1,0 +1,19 @@
+{
+    "name": "mirotalk",
+    "displayName": "MiroTalk",
+    "botTitle": "Start MiroTalk video calls from Pumble",
+    "bot": true,
+    "socketMode": true,
+    "scopes": {
+        "botScopes": [
+            "messages:read",
+            "messages:write",
+            "user:read",
+            "channels:read"
+        ],
+        "userScopes": [
+            "messages:read",
+            "user:read"
+        ]
+    }
+}

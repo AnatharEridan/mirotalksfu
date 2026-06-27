@@ -24,3 +24,12 @@ security
 
 # virtual background
 custom
+
+# pumble addon secrets
+pumble-mirotalk/.pumbleapprc
+pumble-mirotalk/tokens.json
+pumble-mirotalk/data
+pumble-mirotalk/.env
+
+# pumble SDK (local reference only, not part of this repo)
+pumble-node-sdk-master/

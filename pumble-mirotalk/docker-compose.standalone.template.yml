@@ -1,0 +1,31 @@
+# Standalone deploy (image from ghcr.io). Copy to docker-compose.yml in this folder.
+# For MiroTalk + addon together use the repo root docker-compose.template.yml
+
+services:
+    pumble-mirotalk:
+        image: ghcr.io/anathareridan/mirotalksfu/pumble-mirotalk:latest
+        container_name: pumble-mirotalk
+        hostname: pumble-mirotalk
+        restart: unless-stopped
+        ports:
+            - '${PUMBLE_ADDON_HOST_PORT:-5510}:5500/tcp'
+        env_file:
+            - .env
+        environment:
+            PUMBLE_ADDON_PORT: 5500
+            PUMBLE_TOKENS_PATH: /app/data/tokens.json
+        volumes:
+            - ./data:/app/data
+            - ./app.config.json:/app/app.config.json:ro
+        healthcheck:
+            test:
+                [
+                    'CMD',
+                    'node',
+                    '-e',
+                    "require('http').get('http://127.0.0.1:5500/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+                ]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 15s
