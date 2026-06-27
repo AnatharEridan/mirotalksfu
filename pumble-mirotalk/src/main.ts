@@ -8,7 +8,8 @@ import { JOIN_ACTION, NOT_CONFIGURED_MESSAGE, OFFLINE_MESSAGE, WELCOME_MESSAGE, 
 import { createRoomInChannel } from './services/createRoom';
 import { buildJoinUrl } from './services/mirotalk';
 import { createMiroTalkWebhookHandler } from './services/mirotalkWebhook';
-import { buildPersonalJoinMessage } from './services/roomMessage';
+import { createJoinLaunchHandler, createJoinPendingHandler } from './services/joinLaunch';
+import { setPendingJoin } from './services/pendingJoinStore';
 import { JsonFileRoomRegistry } from './services/roomRegistry';
 import { fetchUserProfile } from './services/userProfile';
 
@@ -66,8 +67,6 @@ const addon: App = {
                 sourceType: 'MESSAGE',
                 handlers: {
                     [JOIN_ACTION]: async (ctx: BlockInteractionContext<'MESSAGE'>) => {
-                        await ctx.ack();
-
                         let buttonPayload: JoinButtonPayload | undefined;
                         try {
                             const rawValue = JSON.parse(ctx.payload.payload).value;
@@ -77,22 +76,26 @@ const addon: App = {
                         }
 
                         if (!buttonPayload) {
+                            await ctx.ack();
                             await ctx.say('Could not read the room details. Please start a new call with /mirotalk.', 'ephemeral');
                             return;
                         }
 
                         if (roomRegistry.isRoomEnded(buttonPayload.roomId)) {
+                            await ctx.ack();
                             await ctx.say('This call has ended. Start a new one with /mirotalk.', 'ephemeral');
                             return;
                         }
 
                         if (!isMiroTalkConfigured()) {
+                            await ctx.ack();
                             await ctx.say(NOT_CONFIGURED_MESSAGE, 'ephemeral');
                             return;
                         }
 
                         const client = await ctx.getBotClient();
                         if (!client) {
+                            await ctx.ack();
                             await ctx.say('MiroTalk bot is not available.', 'ephemeral');
                             return;
                         }
@@ -100,9 +103,11 @@ const addon: App = {
                         try {
                             const profile = await fetchUserProfile(client, ctx.payload.userId);
                             const joinUrl = buildJoinUrl(buttonPayload.roomId, profile);
-                            await ctx.say(buildPersonalJoinMessage(joinUrl, profile.name), 'ephemeral');
+                            setPendingJoin(buttonPayload.roomId, ctx.payload.userId, joinUrl);
+                            await ctx.ack();
                         } catch (error) {
                             console.error('Failed to build join link', error);
+                            await ctx.ack();
                             await ctx.say('Failed to prepare your join link. Please try again.', 'ephemeral');
                         }
                     },
@@ -123,6 +128,9 @@ const addon: App = {
         expressApp.get('/health', (_req: unknown, res: { json: (body: unknown) => void }) => {
             res.json({ ok: true, service: 'pumble-mirotalk' });
         });
+
+        expressApp.get('/pumble-join/launch', createJoinLaunchHandler());
+        expressApp.get('/pumble-join/pending', createJoinPendingHandler());
 
         expressApp.post(
             '/mirotalk-webhook',

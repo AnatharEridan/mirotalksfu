@@ -1,6 +1,10 @@
+import { isAxiosError } from 'axios';
 import { ApiClient } from 'pumble-sdk';
 import { buildRoomAnnouncement } from './roomMessage';
 import { JsonFileRoomRegistry } from './roomRegistry';
+
+const MISSING_EDIT_SCOPE_MESSAGE =
+    'Cannot update Join call button: missing messages:edit scope. Reinstall the MiroTalk app in Pumble (Remove → Install).';
 
 export async function closeRoomAnnouncement(
     roomRegistry: JsonFileRoomRegistry,
@@ -26,6 +30,10 @@ export async function closeRoomAnnouncement(
         );
         return true;
     } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 403) {
+            console.error(MISSING_EDIT_SCOPE_MESSAGE);
+            return false;
+        }
         console.error(`Failed to update Pumble message for ended room ${roomId}`, error);
         return false;
     }

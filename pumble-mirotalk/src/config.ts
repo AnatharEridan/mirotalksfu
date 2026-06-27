@@ -50,3 +50,12 @@ export const WELCOME_MESSAGE =
     'When you click **Join call**, your Pumble name and avatar are passed to the meeting automatically.';
 
 export const OFFLINE_MESSAGE = 'MiroTalk addon is currently unreachable. Please try again later.';
+
+/** Public base URL of this addon (for join redirect links). */
+export function getAddonPublicUrl(): string {
+    const raw = process.env.PUMBLE_ADDON_PUBLIC_URL?.trim() || '';
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+        return trimTrailingSlash(raw);
+    }
+    return '';
+}
