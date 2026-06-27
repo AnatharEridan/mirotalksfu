@@ -304,6 +304,20 @@ const webhook = {
     url: config?.integrations?.webhook?.url || 'http://localhost:8888/webhook-endpoint',
 };
 
+function sendRoomEmptyWebhook(room_id) {
+    if (!webhook.enabled) {
+        return;
+    }
+    const data = {
+        timestamp: log.getDateTime(false),
+        room_id,
+    };
+    axios
+        .post(webhook.url, { event: 'roomEmpty', data }, { timeout: 5000 })
+        .then((response) => log.debug('Room empty event tracked:', response.data))
+        .catch((error) => log.error('Error tracking room empty event:', error.message));
+}
+
 // Stats
 const defaultStats = {
     enabled: true,
@@ -4598,6 +4612,8 @@ function startServer() {
             }
 
             if (room.getPeersCount() === 0) {
+                sendRoomEmptyWebhook(socket.room_id);
+
                 // Notify Rocket.Chat to reconcile the call (end if empty)
                 const dcRcServerUrl = config.system?.rc_server_url || process.env.RC_SERVER_URL || process.env.RC_WEBHOOK_URL || '';
                 if (dcRcServerUrl) {
@@ -4675,6 +4691,8 @@ function startServer() {
             }
 
             if (room.getPeersCount() === 0) {
+                sendRoomEmptyWebhook(socket.room_id);
+
                 // Notify Rocket.Chat to reconcile the call (end if empty)
                 const exitRcServerUrl = config.system?.rc_server_url || process.env.RC_SERVER_URL || process.env.RC_WEBHOOK_URL || '';
                 if (exitRcServerUrl) {

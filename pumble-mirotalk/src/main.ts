@@ -1,15 +1,25 @@
+import path from 'path';
 import { App, JsonFileTokenStore, start } from 'pumble-sdk';
+import type { Addon } from 'pumble-sdk/lib/core/services/Addon';
+import type { AddonManifest } from 'pumble-sdk/lib/core/types/types';
+import express from 'express';
 import { BlockInteractionContext } from 'pumble-sdk/lib/core/types/contexts';
 import { JOIN_ACTION, NOT_CONFIGURED_MESSAGE, OFFLINE_MESSAGE, WELCOME_MESSAGE, isMiroTalkConfigured } from './config';
 import { createRoomInChannel } from './services/createRoom';
 import { buildJoinUrl } from './services/mirotalk';
+import { createMiroTalkWebhookHandler } from './services/mirotalkWebhook';
 import { buildPersonalJoinMessage } from './services/roomMessage';
+import { JsonFileRoomRegistry } from './services/roomRegistry';
 import { fetchUserProfile } from './services/userProfile';
 
 type JoinButtonPayload = {
     roomId: string;
     createdByUserId?: string;
 };
+
+const roomRegistry = new JsonFileRoomRegistry(
+    process.env.PUMBLE_ROOMS_PATH || path.join(process.cwd(), 'data', 'rooms.json')
+);
 
 function parseJoinPayload(raw: string | undefined): JoinButtonPayload | undefined {
     if (!raw) {
@@ -37,7 +47,7 @@ const addon: App = {
             usageHint: '[room-name]',
             handler: async (ctx) => {
                 const roomName = ctx.payload.text?.trim() || undefined;
-                await createRoomInChannel(ctx, roomName);
+                await createRoomInChannel(ctx, roomRegistry, roomName);
             },
         },
     ],
@@ -46,7 +56,7 @@ const addon: App = {
             name: 'Start MiroTalk call',
             description: 'Create a MiroTalk video call in this channel',
             handler: async (ctx) => {
-                await createRoomInChannel(ctx);
+                await createRoomInChannel(ctx, roomRegistry);
             },
         },
     ],
@@ -68,6 +78,11 @@ const addon: App = {
 
                         if (!buttonPayload) {
                             await ctx.say('Could not read the room details. Please start a new call with /mirotalk.', 'ephemeral');
+                            return;
+                        }
+
+                        if (roomRegistry.isRoomEnded(buttonPayload.roomId)) {
+                            await ctx.say('This call has ended. Start a new one with /mirotalk.', 'ephemeral');
                             return;
                         }
 
@@ -98,10 +113,22 @@ const addon: App = {
     eventsPath: '/hook',
     redirect: { enable: true, path: '/redirect' },
     tokenStore: new JsonFileTokenStore(process.env.PUMBLE_TOKENS_PATH || 'tokens.json'),
-    onServerConfiguring: (express) => {
-        express.get('/health', (_req: unknown, res: { json: (body: unknown) => void }) => {
+    onServerConfiguring: (expressApp, pumbleAddon) => {
+        const addonApi = pumbleAddon as Addon<AddonManifest>;
+
+        roomRegistry.initialize().catch((error) => {
+            console.error('Failed to load room registry', error);
+        });
+
+        expressApp.get('/health', (_req: unknown, res: { json: (body: unknown) => void }) => {
             res.json({ ok: true, service: 'pumble-mirotalk' });
         });
+
+        expressApp.post(
+            '/mirotalk-webhook',
+            express.json(),
+            createMiroTalkWebhookHandler(roomRegistry, (workspaceId) => addonApi.getBotClient(workspaceId))
+        );
     },
 };
 

@@ -8,6 +8,7 @@
         "botScopes": [
             "messages:read",
             "messages:write",
+            "messages:edit",
             "user:read",
             "channels:read"
         ],

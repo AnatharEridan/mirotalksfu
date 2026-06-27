@@ -11,9 +11,15 @@
         "dev:direct": "npm run build && node scripts/start-local.js",
         "pre-publish": "npx pumble-cli pre-publish"
     },
-    "keywords": ["pumble", "mirotalk", "webrtc", "video"],
+    "keywords": [
+        "pumble",
+        "mirotalk",
+        "webrtc",
+        "video"
+    ],
     "license": "AGPL-3.0",
     "devDependencies": {
+        "@types/express": "^5.0.6",
         "@types/node": "^22.10.0",
         "pumble-cli": "^1.0.2",
         "typescript": "^5.3.3"

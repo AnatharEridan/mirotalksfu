@@ -14,6 +14,7 @@ services:
         environment:
             PUMBLE_ADDON_PORT: 5500
             PUMBLE_TOKENS_PATH: /app/data/tokens.json
+            PUMBLE_ROOMS_PATH: /app/data/rooms.json
         volumes:
             - ./data:/app/data
             - ./app.config.json:/app/app.config.json:ro

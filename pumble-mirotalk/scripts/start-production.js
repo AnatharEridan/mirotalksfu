@@ -9,5 +9,6 @@ if (missing.length > 0) {
 process.env.PUMBLE_ADDON_PORT = process.env.PUMBLE_ADDON_PORT || '5500';
 process.env.PUMBLE_ADDON_MANIFEST_PATH = process.env.PUMBLE_ADDON_MANIFEST_PATH || 'manifest.json';
 process.env.PUMBLE_TOKENS_PATH = process.env.PUMBLE_TOKENS_PATH || '/app/data/tokens.json';
+process.env.PUMBLE_ROOMS_PATH = process.env.PUMBLE_ROOMS_PATH || '/app/data/rooms.json';
 
 require('../dist/main.js');

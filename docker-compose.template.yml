@@ -45,6 +45,7 @@ services:
         environment:
             PUMBLE_ADDON_PORT: 5500
             PUMBLE_TOKENS_PATH: /app/data/tokens.json
+            PUMBLE_ROOMS_PATH: /app/data/rooms.json
         volumes:
             - ./pumble-mirotalk/data:/app/data
             - ./pumble-mirotalk/app.config.json:/app/app.config.json:ro
