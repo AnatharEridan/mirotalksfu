@@ -979,11 +979,16 @@ function isPeerPresenter() {
 
 function getPeerName() {
     const name = getQueryParam('name');
+    const fromPumble = getQueryParam('source') === 'pumble';
     if (isHtml(name)) {
         console.log('Direct join', { name: 'Invalid name' });
         return 'Invalid name';
     }
-    console.log('Direct join', { name: name });
+    console.log('Direct join', { name: name, fromPumble: fromPumble });
+
+    if (fromPumble && name && name.trim()) {
+        return name.trim();
+    }
 
     if (isValidEmail(name)) {
         getId('notifyEmailInput').value = name;
@@ -1009,9 +1014,17 @@ function generateRandomName() {
 
 function getPeerAvatar() {
     const avatar = getQueryParam('avatar');
+    const fromPumble = getQueryParam('source') === 'pumble';
     const avatarDisabled = avatar === '0' || avatar === 'false';
     const isBase64Avatar = typeof avatar === 'string' && avatar.startsWith('data:');
-    console.log('Direct join', { avatar: avatar });
+    console.log('Direct join', { avatar: avatar, fromPumble: fromPumble });
+    if (!avatarDisabled && !isBase64Avatar && isValidAvatarURL(avatar)) {
+        return avatar;
+    }
+    if (fromPumble && avatar && !avatarDisabled && !isBase64Avatar) {
+        console.log('Pumble join: using avatar from join link');
+        return avatar;
+    }
     if (avatarDisabled || isBase64Avatar || !isValidAvatarURL(avatar)) {
         const saved = localStorageSettings.peer_avatar;
         if (saved && isValidAvatarURL(saved)) {
@@ -1774,6 +1787,14 @@ function roomIsReady() {
 
     if (peer_avatar && isValidAvatarURL(peer_avatar)) {
         myProfileAvatar.setAttribute('src', peer_avatar);
+        if (getQueryParam('source') === 'pumble') {
+            localStorageSettings.peer_avatar = peer_avatar;
+            lS.setSettings(localStorageSettings);
+        }
+    } else if (getQueryParam('source') === 'pumble' && peer_avatar && peer_avatar !== '0' && peer_avatar !== 'false') {
+        myProfileAvatar.setAttribute('src', peer_avatar);
+        localStorageSettings.peer_avatar = peer_avatar;
+        lS.setSettings(localStorageSettings);
     } else if (rc.isValidEmail(peer_name)) {
         myProfileAvatar.style.borderRadius = `50px`;
         myProfileAvatar.setAttribute('src', rc.genGravatar(peer_name));
