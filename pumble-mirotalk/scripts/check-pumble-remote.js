@@ -29,7 +29,7 @@ const workspaceUserId = globalEnv.PUMBLE_WORKSPACE_USER_ID;
 const token = globalEnv.PUMBLE_ACCESS_TOKEN;
 
 async function main() {
-    const url = `${apiUrl}/workspaces/${workspaceId}/workspaceUsers/${workspaceUserId}/apps/${appId}`;
+    const url = `${apiUrl}/workspaces/${workspaceId}/workspaceUsers/${workspaceUserId}/apps/mine/${appId}`;
     const res = await fetch(url, { headers: { Authtoken: token } });
     if (!res.ok) {
         console.error('Pumble API error', res.status, await res.text());
@@ -51,12 +51,15 @@ async function main() {
         console.log(`      ${cmd.description || ''}`);
     }
     console.log('');
-    const expected = 'https://secondmeet.devilgate-dev.ru/hook';
     const eventsUrl = app.eventSubscriptions?.url || '';
-    if (!eventsUrl.includes('secondmeet.devilgate-dev.ru')) {
+    const expected = 'https://secondmeet.devilgate-dev.ru/hook';
+    if (!eventsUrl) {
+        console.log('FIX: Events URL is missing — Pumble cannot reach your bot.');
+        console.log('  npm run set-urls -- --host https://secondmeet.devilgate-dev.ru');
+    } else if (!eventsUrl.includes('secondmeet.devilgate-dev.ru')) {
         console.log('WARNING: Events URL does not point to secondmeet.devilgate-dev.ru');
         console.log(`  Expected like: ${expected}`);
-        console.log('  Fix: npx pumble-cli pre-publish --host https://secondmeet.devilgate-dev.ru');
+        console.log('  Fix: npm run set-urls -- --host https://secondmeet.devilgate-dev.ru');
     } else {
         console.log('Events URL host looks OK.');
     }

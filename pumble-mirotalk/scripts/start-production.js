@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const http = require('http');
 
 const APP_SECRET_KEYS = [
     'PUMBLE_APP_ID',
@@ -44,28 +43,12 @@ function loadPumbleAppRc() {
     return null;
 }
 
-function patchHttpLogging() {
-    const originalListen = http.Server.prototype.listen;
-    http.Server.prototype.listen = function patchedListen(...args) {
-        this.on('request', (req, res) => {
-            if (!req.url || !req.url.startsWith('/hook')) {
-                return;
-            }
-            res.on('finish', () => {
-                console.log(`[http] ${req.method} ${req.url} -> ${res.statusCode}`);
-            });
-        });
-        return originalListen.apply(this, args);
-    };
-}
-
 const rcSource = loadPumbleAppRc();
 
 const missing = APP_SECRET_KEYS.filter((key) => !process.env[key]);
 if (missing.length > 0) {
     console.error(`Missing required environment variables: ${missing.join(', ')}`);
-    console.error('Run: npx pumble-cli connect && npx pumble-cli pre-publish --host <your-url>');
-    console.error('Or copy values from pumble-mirotalk/.pumbleapprc into the root .env');
+    console.error('Run: npx pumble-cli connect && npm run set-urls -- --host <your-url>');
     process.exit(1);
 }
 
@@ -85,8 +68,6 @@ try {
 } catch (e) {
     console.warn('Could not patch pumble-sdk hook logging:', e.message);
 }
-
-patchHttpLogging();
 
 process.env.PUMBLE_ADDON_PORT = process.env.PUMBLE_ADDON_PORT || '5500';
 process.env.PUMBLE_ADDON_MANIFEST_PATH = process.env.PUMBLE_ADDON_MANIFEST_PATH || 'manifest.json';

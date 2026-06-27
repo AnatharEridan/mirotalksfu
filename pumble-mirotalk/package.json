@@ -13,7 +13,8 @@
         "reinstall-oauth": "node scripts/reinstall-oauth.js",
         "sync-secrets": "node scripts/sync-pumble-secrets.js",
         "check-secrets": "node scripts/check-pumble-secrets.js",
-        "check-remote": "node scripts/check-pumble-remote.js"
+        "check-remote": "node scripts/check-pumble-remote.js",
+        "set-urls": "node scripts/set-production-urls.js"
     },
     "keywords": [
         "pumble",
